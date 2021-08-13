@@ -3,9 +3,12 @@ from typing import List
 from . import schemas, models
 from .database import  SessionLocal, engine
 from sqlalchemy.orm import Session
+from .hashing import Hash
+from blog import hashing
 
 app = FastAPI()
 
+# Creates all db tables using engine 
 models.Base.metadata.create_all(engine)
 
 def get_db():
@@ -52,3 +55,17 @@ def destroy(id, db:Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id).delete(synchronize_session=False)
     db.commit()
     return {'detail':'done'}
+
+
+@app.get('/user', response_model=List[schemas.ShowUser])
+def getAllUsers(db:Session = Depends(get_db)):
+    blogs = db.query(models.User).all()
+    return blogs
+
+@app.post('/user', status_code=status.HTTP_201_CREATED)
+def create_user(request: schemas.User, db:Session = Depends(get_db)):
+    new_user = models.User(name=request.name, email=request.email, password=hashing.Hash.bcrypt(request.passwordk))
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    pass
