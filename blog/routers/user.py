@@ -9,16 +9,19 @@ from sqlalchemy.orm import Session
 from ..hashing import Hash
 from blog import hashing
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/user",
+    tags=['users']
+)
 
 get_db = database.get_db
 
-@router.get('/user', response_model=List[schemas.ShowUser], tags=['users'])
+@router.get('/', response_model=List[schemas.ShowUser])
 def getAllUsers(db:Session = Depends(get_db)):
     blogs = db.query(models.User).all()
     return blogs
 
-@router.get('/user/{id}', response_model=schemas.ShowUser, tags=['users'])
+@router.get('/{id}', response_model=schemas.ShowUser)
 def getUser(id:int, db:Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:
@@ -26,7 +29,7 @@ def getUser(id:int, db:Session = Depends(get_db)):
                             detail=f"User with id {id} not found")
     return user
 
-@router.post('/user', response_model=schemas.ShowUser, status_code=status.HTTP_201_CREATED, tags=['users'])
+@router.post('/', response_model=schemas.ShowUser, status_code=status.HTTP_201_CREATED)
 def create_user(request: schemas.User, db:Session = Depends(get_db)):
     new_user = models.User(name=request.name, email=request.email, password=hashing.Hash.bcrypt(request.password))
     db.add(new_user)
